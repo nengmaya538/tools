@@ -2,24 +2,25 @@
 <style>
 textarea { width:100%; height:200px; margin-bottom:10px; }
 button { padding:8px 15px; margin-right:5px; cursor:pointer; }
+.nnn { padding:8px; max-width:100%; background-color:#ddd;}
 pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
 </style>
 
-<h2>Auto Tambah Categories + Split 15 Bagian</h2>
+<h4>Auto Tambah Categories + Split 15 Bagian</h4>
 <p>ubah daftar menjadi 15 bagian berapapun jumlah barisnya</p>
 <p>dengan format:</p>
-<pre><code>
+<pre>
 categories: [baris 01,baris 02,dast]
-</code></pre>
+</pre><br />
+<div class="nnn">
 <textarea id="input" placeholder="Paste 1000 baris di sini..."></textarea>
-
-<br>
-<button onclick="generate()">Generate</button>
+<br><center>
+<button onclick="generate()">Generate</button><br /><br />
 <button onclick="copyResult()">Copy Hasil</button>
-
+</center>
 <h3>Hasil:</h3>
 <pre id="output"></pre>
-
+<div>
 <script>
 function generate() {
   const raw = document.getElementById("input").value;
@@ -41,7 +42,7 @@ function generate() {
     const end = start + baseSize + extra;
     const chunk = lines.slice(start, end);
 
-    result += `### Bagian ${i+1}\n`;
+    
     result += `categories: [${chunk.join(",")}]\n\n`;
 
     start = end;
