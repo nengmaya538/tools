@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Split Text Generator</title>
+<title>Mass Split Generator</title>
 
 <style>
 body{font-family:Arial}
@@ -11,6 +11,8 @@ input{width:100%;padding:6px;margin-bottom:10px}
 button{padding:10px 20px;cursor:pointer}
 .box{background:#ddd;padding:15px;max-width:900px;margin:auto}
 #status{margin-top:10px;font-weight:bold}
+#progress{height:10px;background:#aaa;margin-top:10px}
+#bar{height:10px;background:#2a7;width:0%}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -20,16 +22,19 @@ button{padding:10px 20px;cursor:pointer}
 
 <div class="box">
 
-<h3>Split Text → HTML → ZIP</h3>
+<h3>Mass Split → HTML → ZIP</h3>
 
 <label>Judul dasar</label>
-<input id="titleBase" placeholder="Contoh: Tutorial SEO">
+<input id="titleBase" placeholder="contoh: artikel">
 
-<label>Jumlah File / Split</label>
-<input id="parts" type="number" value="15" min="1">
+<label>Nomor mulai</label>
+<input id="startNum" type="number" value="1">
+
+<label>Jumlah split</label>
+<input id="parts" type="number" value="1000">
 
 <label>Input Text</label>
-<textarea id="input" placeholder="Paste text di sini..."></textarea>
+<textarea id="input"></textarea>
 
 <center>
 <button onclick="generate()">Generate ZIP</button>
@@ -37,19 +42,29 @@ button{padding:10px 20px;cursor:pointer}
 
 <div id="status"></div>
 
+<div id="progress">
+<div id="bar"></div>
+</div>
+
 </div>
 
 <script>
 
-function generate(){
+function pad(n){
+return n.toString().padStart(2,"0");
+}
+
+async function generate(){
 
 const status=document.getElementById("status");
-status.innerText="Memproses...";
+const bar=document.getElementById("bar");
+
+status.innerText="Preparing...";
 
 const raw=document.getElementById("input").value;
 
 if(!raw){
-status.innerText="Input kosong.";
+status.innerText="Input kosong";
 return;
 }
 
@@ -57,15 +72,17 @@ const lines=raw.split("\n");
 
 const parts=parseInt(document.getElementById("parts").value);
 
-if(!parts || parts<1){
-status.innerText="Jumlah split tidak valid.";
+if(parts<1){
+status.innerText="Split tidak valid";
 return;
 }
 
+const titleBase=document.getElementById("titleBase").value || "judul";
+
+const startNum=parseInt(document.getElementById("startNum").value) || 1;
+
 const baseSize=Math.floor(lines.length/parts);
 const remainder=lines.length%parts;
-
-const titleBase=document.getElementById("titleBase").value;
 
 let start=0;
 
@@ -74,19 +91,16 @@ let zip=new JSZip();
 for(let i=0;i<parts;i++){
 
 const extra=i<remainder?1:0;
+
 const end=start+baseSize+extra;
 
 const chunk=lines.slice(start,end);
 
 start=end;
 
-let title;
+let number=startNum+i;
 
-if(titleBase){
-title=titleBase+" "+(i+1);
-}else{
-title="Judul "+(i+1);
-}
+let title=titleBase+pad(number);
 
 let content=
 `---
@@ -98,24 +112,38 @@ ${chunk.join("\n")}
 
 zip.file((i+1)+".html",content);
 
+if(i%50==0){
+
+let percent=Math.floor((i/parts)*100);
+
+bar.style.width=percent+"%";
+
+status.innerText=`Generating ${i} / ${parts}`;
+
+await new Promise(r=>setTimeout(r,0));
+
 }
 
-zip.generateAsync({type:"blob"}).then(function(content){
+}
+
+status.innerText="Creating ZIP...";
+
+const blob=await zip.generateAsync({
+type:"blob",
+compression:"STORE"
+});
 
 const a=document.createElement("a");
 
-a.href=URL.createObjectURL(content);
+a.href=URL.createObjectURL(blob);
+
 a.download="hasil_split.zip";
 
 a.click();
 
-status.innerText="ZIP berhasil dibuat.";
+bar.style.width="100%";
 
-}).catch(function(e){
-
-status.innerText="Error: "+e;
-
-});
+status.innerText="Selesai ✔";
 
 }
 
