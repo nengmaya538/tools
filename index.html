@@ -18,7 +18,7 @@ layout: null
 
 
 	
-{% include head.html %}	
+	
 
 
 <!-- awal Seo Otomatis khusus untuk Homepage -->
@@ -90,17 +90,75 @@ layout: null
 <link rel="sitemap" type="application/xml" href="{{ '/sitemap-categories.xml' | absolute_url }}">
 <link rel="alternate" type="application/rss+xml" href="{{ '/feed.xml' | absolute_url }}">
 
-	{% include verif.html %}
+	
   </head>
 <body loading="lazy">
-	{% include header1.html %}
+	
 <main loading="lazy">
 
-{% include main2.html %}
+
+<style>
+textarea { width:100%; height:200px; margin-bottom:10px; }
+button { padding:8px 15px; margin-right:5px; cursor:pointer; }
+.nnn { padding:8px; max-width:100%; background-color:#ddd;}
+pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
+</style>
+
+<h4>Auto Tambah Categories + Split 15 Bagian</h4>
+<p>ubah daftar menjadi 15 bagian berapapun jumlah barisnya</p>
+<p>dengan format:</p>
+<pre>
+categories: [baris 01,baris 02,dast]
+</pre><br />
+<div class="nnn">
+<textarea id="input" placeholder="Paste 1000 baris di sini..."></textarea>
+<br><center>
+<button onclick="generate()">Generate</button><br /><br />
+<button onclick="copyResult()">Copy Hasil</button>
+</center>
+<h3>Hasil:</h3>
+<pre id="output"></pre>
+<div>
+<script>
+function generate() {
+  const raw = document.getElementById("input").value;
+
+  const lines = raw
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l !== "");
+
+  const parts = 15;
+  const baseSize = Math.floor(lines.length / parts);
+  const remainder = lines.length % parts;
+
+  let start = 0;
+  let result = "";
+
+  for (let i = 0; i < parts; i++) {
+    const extra = i < remainder ? 1 : 0;
+    const end = start + baseSize + extra;
+    const chunk = lines.slice(start, end);
+
+    
+    result += `categories: [${chunk.join(",")}]\n\n`;
+
+    start = end;
+  }
+
+  document.getElementById("output").textContent = result;
+}
+
+function copyResult() {
+  const text = document.getElementById("output").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Hasil berhasil di-copy!");
+  });
+}
+</script>
+<br />
 </main>
-<!-- awal search -->
-{% include awal-search.html %}
-<!-- akhir search -->
+
 
 
 	<center>
@@ -111,45 +169,6 @@ layout: null
 
 	
 	
-<!--FOOTER-->
-<footer style="text-align: center; padding: 30px 20px; font-size: 16px; color: #666;" loading="lazy">
-  <small>
-    &copy; </small>
-<span id="current-year"></span> 
- -  <a id="main-heading2" href="/" style="color: inherit; text-decoration: none;"></a>.
-  <span>   All rights reserved.</span> 
-  <script>
-    (function () {
-      const domain = window.location.hostname || "";
-      const parts = domain.split(".");
-      let brand = "Blog";
-      let rootDomain = domain;
-      // Khusus untuk .my.id
-      if (domain.endsWith(".my.id") && parts.length > 2) {
-        // Ambil nama domain utama (2 bagian sebelum .my.id)
-        const baseName = parts[parts.length - 3]; // contoh: domain / do-main
-        rootDomain = "www." + baseName + ".my.id";
-
-        // Ubah jadi Title Case dengan spasi jika ada tanda minus
-        brand = baseName
-          .split("-")
-          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(" ");
-      }
-
-      // Update elemen
-      document.getElementById("current-year").textContent = new Date().getFullYear();
-      const headingEl = document.getElementById("main-heading2");
-      headingEl.textContent = brand;
-      headingEl.href = "https://" + rootDomain;
-    })();
-  </script>
-</footer>
-	
-	
-
-<br /><br /><br />
-
 
 	
 
