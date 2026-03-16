@@ -2,9 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
- 
-<title>Mass Split Generator</title>
+<title>Mass Page Generator</title>
 
 <style>
 body{font-family:Arial}
@@ -14,7 +12,7 @@ button{padding:10px 20px;cursor:pointer}
 .box{background:#ddd;padding:15px;max-width:900px;margin:auto}
 #status{margin-top:10px;font-weight:bold}
 #progress{height:10px;background:#aaa;margin-top:10px}
-#bar{height:10px;background:#2a7;width:0%}
+#bar{height:10px;background:#28a;width:0%}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -24,10 +22,13 @@ button{padding:10px 20px;cursor:pointer}
 
 <div class="box">
 
-<h3>Mass Split → HTML → ZIP</h3>
+<h3>Mass Page Generator</h3>
 
 <label>Judul dasar</label>
 <input id="titleBase" placeholder="contoh: artikel">
+
+<label>Categories</label>
+<input id="categoryBase" placeholder="contoh: seo">
 
 <label>Nomor mulai</label>
 <input id="startNum" type="number" value="1">
@@ -35,7 +36,7 @@ button{padding:10px 20px;cursor:pointer}
 <label>Jumlah split</label>
 <input id="parts" type="number" value="1000">
 
-<label>Input Text</label>
+<label>Input text</label>
 <textarea id="input"></textarea>
 
 <center>
@@ -54,6 +55,13 @@ button{padding:10px 20px;cursor:pointer}
 
 function pad(n){
 return n.toString().padStart(2,"0");
+}
+
+function slug(text){
+return text
+.toLowerCase()
+.replace(/[^a-z0-9]+/g,"-")
+.replace(/^-+|-+$/g,"");
 }
 
 async function generate(){
@@ -75,11 +83,13 @@ const lines=raw.split("\n");
 const parts=parseInt(document.getElementById("parts").value);
 
 if(parts<1){
-status.innerText="Split tidak valid";
+status.innerText="Jumlah split tidak valid";
 return;
 }
 
 const titleBase=document.getElementById("titleBase").value || "judul";
+
+const categoryBase=document.getElementById("categoryBase").value || "artikel";
 
 const startNum=parseInt(document.getElementById("startNum").value) || 1;
 
@@ -104,15 +114,18 @@ let number=startNum+i;
 
 let title=titleBase+pad(number);
 
+let filename=slug(title)+".html";
+
 let content=
 `---
 layout: c
 title: "${title}"
+categories: [${categoryBase}]
 ---
 ${chunk.join("\n")}
 `;
 
-zip.file((i+1)+".html",content);
+zip.file(filename,content);
 
 if(i%50==0){
 
@@ -139,7 +152,7 @@ const a=document.createElement("a");
 
 a.href=URL.createObjectURL(blob);
 
-a.download="hasil_split.zip";
+a.download="mass-pages.zip";
 
 a.click();
 
@@ -150,10 +163,6 @@ status.innerText="Selesai ✔";
 }
 
 </script>
-  <br /><hr />
-<center>
-<a href="https://nengmaya538.github.io/tools/">home</a>
-	</center>
-    <br /><br />
+
 </body>
 </html>
