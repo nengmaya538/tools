@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sitemap Function Generator</title>
+
+<style>
+body{font-family:Arial}
+textarea{width:100%;height:220px;margin-bottom:10px}
+input{width:100%;padding:6px;margin-bottom:10px}
+button{padding:10px 20px;cursor:pointer}
+.box{background:#ddd;padding:15px;max-width:900px;margin:auto}
+#status{margin-top:10px;font-weight:bold}
+#progress{height:10px;background:#aaa;margin-top:10px}
+#bar{height:10px;background:#28a;width:0%}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+</head>
+<body>
+
+<div class="box">
+
+<h3>Sitemap Function Generator</h3>
+
+<label>Jumlah split (jumlah file sitemap)</label>
+<input id="parts" type="number" value="5">
+
+<label>Input URL / path (1 baris 1)</label>
+<textarea id="input" placeholder="/artikel01&#10;/artikel02&#10;/artikel03"></textarea>
+
+<center>
+<button onclick="generate()">Generate ZIP</button>
+</center>
+
+<div id="status"></div>
+
+<div id="progress"><div id="bar"></div></div>
+
+</div>
+
+<script>
+
+async function generate(){
+
+const status=document.getElementById("status");
+const bar=document.getElementById("bar");
+
+status.innerText="Preparing...";
+
+const raw=document.getElementById("input").value;
+
+if(!raw){
+status.innerText="Input kosong";
+return;
+}
+
+const lines=raw.split("\n"); // mentah (tidak diubah)
+
+const parts=parseInt(document.getElementById("parts").value);
+
+if(parts<1){
+status.innerText="Jumlah split tidak valid";
+return;
+}
+
+const baseSize=Math.floor(lines.length/parts);
+const remainder=lines.length%parts;
+
+let start=0;
+
+let zip=new JSZip();
+
+for(let i=0;i<parts;i++){
+
+const extra=i<remainder?1:0;
+
+const end=start+baseSize+extra;
+
+const chunk=lines.slice(start,end);
+
+start=end;
+
+// buat array string
+let urlList=chunk.map(u=>`"${u}"`).join(",\n    ");
+
+let content=
+`export async function onRequestGet(context) {
+  const host = context.request.headers.get("host");
+
+  const urls = [
+    ${urlList}
+  ];
+
+  const items = urls.map(url => {
+    return \`
+<url>
+  <loc>https://\${host}\${url}</loc>
+</url>\`;
+  }).join("");
+
+  const body = \`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+\${items}
+</urlset>\`;
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "application/xml"
+    }
+  });
+}
+`;
+
+zip.file("sitemap"+(i+1)+".js",content);
+
+// progress
+if(i%20==0){
+let percent=Math.floor((i/parts)*100);
+bar.style.width=percent+"%";
+status.innerText=`Generating ${i} / ${parts}`;
+await new Promise(r=>setTimeout(r,0));
+}
+
+}
+
+status.innerText="Creating ZIP...";
+
+const blob=await zip.generateAsync({
+type:"blob",
+compression:"STORE"
+});
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+a.download="sitemap-functions.zip";
+a.click();
+
+bar.style.width="100%";
+
+status.innerText="Selesai ✔";
+
+}
+
+</script>
+
+</body>
+</html>
