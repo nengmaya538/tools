@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UL LI Generator PRO</title>
+<title>UL LI Generator PRO FINAL</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -29,30 +29,48 @@ input, select { padding:6px; margin:5px 0; width:100%; }
 
 <main>
 
-<h2>UL LI class spo (PRO MAX)</h2>
+<h2>UL LI Generator PRO (FINAL)</h2>
 
 <div class="info">
+
 <b>Fungsi:</b><br>
-Convert list jadi banyak file HTML + link SEO + ZIP.<br><br>
+Mengubah daftar keyword menjadi banyak file HTML berisi link, lalu otomatis di-zip.<br><br>
 
 <b>Format URL:</b><br>
-<code>/categories/?q=baris 01</code> (default jika domain kosong)<br><br>
+<code>/categories/?q=baris 01</code><br>
+(Default jika domain kosong)<br><br>
 
-<b>Auto Clean:</b>
+<b>Aturan pembersihan data:</b>
 <ul>
-<li>hapus spasi depan belakang ✔</li>
-<li>rapikan spasi tengah ✔</li>
-<li>_ dan - jadi spasi ✔</li>
-<li>hapus simbol depan/belakang ✔</li>
-<li>abaikan baris kosong ✔</li>
+<li>Spasi depan & belakang dihapus</li>
+<li>Spasi berlebih dirapikan</li>
+<li>Tanda <b>_</b> dan <b>-</b> diubah jadi spasi</li>
+<li>Simbol di awal/akhir dihapus</li>
 </ul>
+
+<b>Filter baris:</b>
+<ul>
+<li>Baris kosong → dibuang</li>
+<li>Hanya simbol → dibuang</li>
+<li>Kurang dari <b>5 huruf/angka</b> → dibuang</li>
+</ul>
+
+<b>Mode split:</b>
+<ul>
+<li><b>Bagi jumlah bagian</b> → menentukan jumlah file</li>
+<li><b>Item per bagian</b> → menentukan isi tiap file</li>
+</ul>
+
+<b>Contoh:</b><br>
+10.000 baris + 1000 item → hasil 10 file dalam ZIP
+
 </div>
 
 <div class="nnn">
 
-<input type="text" id="domain" placeholder="kosongkan = default /categories">
+<input type="text" id="domain" placeholder="kosongkan = /categories">
 
-<textarea id="input" placeholder="Paste banyak baris..."></textarea>
+<textarea id="input" placeholder="Paste banyak baris di sini..."></textarea>
 
 <select id="mode">
   <option value="byParts">Bagi jumlah bagian</option>
@@ -64,7 +82,7 @@ Convert list jadi banyak file HTML + link SEO + ZIP.<br><br>
 <br><br>
 <button onclick="generate()">🚀 Generate + Download ZIP</button>
 
-<h3>Preview:</h3>
+<h3>Preview (sebagian):</h3>
 <pre id="output"></pre>
 
 </div>
@@ -78,12 +96,12 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// Bersihkan teks
+// Bersihkan teks tampilan
 function cleanText(text) {
   return text.trim().replace(/\s+/g, " ");
 }
 
-// Normalisasi query
+// Normalisasi untuk URL (?q=...)
 function normalizeQuery(text) {
   return text
     .toLowerCase()
@@ -102,15 +120,19 @@ async function generate() {
 
   let domain = document.getElementById("domain").value.trim();
 
-  // 🔥 DEFAULT DOMAIN
+  // Default domain
   if (!domain) domain = "/categories";
 
   if (!num || num <= 0) return alert("Isi jumlah!");
 
+  // FILTER FINAL (MIN 5 KARAKTER)
   const lines = raw
     .split("\n")
     .map(cleanText)
-    .filter(l => l !== "" && /[a-z0-9]/i.test(l));
+    .filter(l => {
+      const clean = l.replace(/[^a-z0-9]/gi, "");
+      return l !== "" && clean.length >= 5;
+    });
 
   let chunks = [];
 
