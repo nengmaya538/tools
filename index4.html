@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generator UL LI</title>
+
+<style>
+textarea { width:100%; height:200px; margin-bottom:10px; }
+button { padding:8px 15px; margin-right:5px; cursor:pointer; }
+.nnn { padding:8px; max-width:100%; background-color:#ddd;}
+pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
+</style>
+
+</head>
+<body>
+
+<main>
+
+<h4>Convert List ke UL LI</h4>
+<p>Setiap baris akan dijadikan &lt;li&gt;</p>
+
+<div class="nnn">
+<textarea id="input" placeholder="Paste baris di sini..."></textarea>
+
+<br><center>
+<button onclick="generate()">Generate</button><br /><br />
+<button onclick="copyResult()">Copy Hasil</button>
+</center>
+
+<h3>Hasil:</h3>
+<pre id="output"></pre>
+</div>
+
+<script>
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, function (match) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[match];
+  });
+}
+
+function generate() {
+  const raw = document.getElementById("input").value;
+
+  const lines = raw
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l !== "");
+
+  let result = '<ul class="spo">\\n';
+
+  lines.forEach(line => {
+    result += '<li>' + escapeHTML(line) + '</li>\\n';
+  });
+
+  result += '</ul>';
+
+  document.getElementById("output").textContent = result;
+}
+
+function copyResult() {
+  const text = document.getElementById("output").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Hasil berhasil di-copy!");
+  });
+}
+</script>
+
+</main>
+
+</body>
+</html>
