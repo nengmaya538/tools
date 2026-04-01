@@ -3,110 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Generator UL LI</title>
+<title>UL LI Generator PRO</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
+body { font-family:Arial; padding:10px; }
 textarea { width:100%; height:200px; margin-bottom:10px; }
-button { padding:8px 15px; margin-right:5px; cursor:pointer; }
-.nnn { padding:10px; max-width:100%; background-color:#ddd;}
+button { padding:10px 15px; cursor:pointer; }
+.nnn { padding:10px; background:#ddd;}
 pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
 .info {
   background:#fff;
-  padding:10px;
+  padding:12px;
   margin-bottom:10px;
   border-left:4px solid #333;
   font-size:14px;
-  line-height:1.5;
+  line-height:1.6;
 }
+input, select { padding:6px; margin:5px 0; width:100%; }
 </style>
-
 </head>
+
 <body>
 
 <main>
 
-<h3>Tool Convert List ke UL LI</h3>
+<h2>UL LI Generator PRO (ZIP + SEO Link)</h2>
 
-<!-- ===== KETERANGAN UTAMA DI TAMPILAN ===== -->
 <div class="info">
-<b>Fungsi:</b><br>
-Mengubah daftar baris menjadi HTML list <code>&lt;ul class="spo"&gt;</code> dengan isi <code>&lt;li&gt;</code>.<br><br>
+<b>Fungsi:</b><br />
+Convert list jadi banyak file HTML berisi link SEO lalu di-zip.<br /><br />
+<b>Format link:</b><br />
+<code>domain.com/?q=slug</code><br /><br />
 
-<b>Cara pakai:</b>
-<ol>
-<li>Paste daftar (1 baris = 1 item)</li>
-<li>Klik tombol <b>Generate</b></li>
-<li>Klik <b>Copy Hasil</b> untuk menyalin</li>
-</ol>
+<b>Mode:</b>
+<ul>
+<li><b>Bagi bagian</b> → jumlah file</li>
+<li><b>Item per bagian</b> → isi tiap file</li>
+</ul>
 
-<b>Contoh input:</b><br>
-apel<br>
-jeruk<br>
-mangga<br><br>
+<b>Contoh:</b><br />
+10.000 baris + 1000 item → 10 file dalam ZIP<br /><br />
 
-<b>Contoh output:</b>
-<pre>&lt;ul class="spo"&gt;
-&lt;li&gt;apel&lt;/li&gt;
-&lt;li&gt;jeruk&lt;/li&gt;
-&lt;li&gt;mangga&lt;/li&gt;
-&lt;/ul&gt;</pre>
-</div>
-
+<b>Auto Clean:</b>
+<ul>
+<li>hapus spasi depan belakang ✔</li>
+<li>rapikan spasi tengah ✔</li>
+<li>hapus karakter aneh ✔</li>
+</ul>
+</div><br />
+<b>contoh hasil</b>
+<pre><code><ul class="spo">
+<li>kw 01</li>
+<li>kw 02</li>
+</ul></code></pre>
+<br /><br />
+<b><i>TINGGAL MASUKIN DAFTAR KW</i></b>
 <div class="nnn">
 
-<textarea id="input" placeholder="Paste baris di sini..."></textarea>
+<input type="text" id="domain" placeholder="contoh: nengmaya538.github.io">
 
-<br><center>
-<button onclick="generate()">Generate</button><br /><br />
-<button onclick="copyResult()">Copy Hasil</button>
-</center>
+<textarea id="input" placeholder="Paste banyak baris..."></textarea>
 
-<h3>Hasil:</h3>
+<select id="mode">
+  <option value="byParts">Bagi jumlah bagian</option>
+  <option value="bySize">Item per bagian</option>
+</select>
+
+<input type="number" id="number" placeholder="contoh: 10 atau 1000">
+
+<br /><br />
+<button onclick="generate()">🚀 Generate + Download ZIP</button>
+
+<h3>Preview (sebagian):</h3>
 <pre id="output"></pre>
 
 </div>
 
 <script>
+
+// Escape HTML
 function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, function (match) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[match];
-  });
+  return str.replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[m]));
 }
 
-function generate() {
+// Bersihkan teks
+function cleanText(text) {
+  return text
+    .trim() // hapus spasi depan belakang
+    .replace(/\s+/g, " "); // rapikan spasi tengah
+}
+
+// Slug SEO
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "");
+}
+
+async function generate() {
+
   const raw = document.getElementById("input").value;
+  const mode = document.getElementById("mode").value;
+  const num = parseInt(document.getElementById("number").value);
+  const domain = document.getElementById("domain").value.trim();
+
+  if (!domain) return alert("Isi domain!");
+  if (!num || num <= 0) return alert("Isi jumlah!");
 
   const lines = raw
     .split("\n")
-    .map(l => l.trim())
+    .map(cleanText)
     .filter(l => l !== "");
 
-  let result = '<ul class="spo">\\n';
+  let chunks = [];
 
-  lines.forEach(line => {
-    result += '<li>' + escapeHTML(line) + '</li>\\n';
+  if (mode === "byParts") {
+    const base = Math.floor(lines.length / num);
+    const rem = lines.length % num;
+    let start = 0;
+
+    for (let i = 0; i < num; i++) {
+      const extra = i < rem ? 1 : 0;
+      const end = start + base + extra;
+      chunks.push(lines.slice(start, end));
+      start = end;
+    }
+
+  } else {
+    for (let i = 0; i < lines.length; i += num) {
+      chunks.push(lines.slice(i, i + num));
+    }
+  }
+
+  const zip = new JSZip();
+  let preview = "";
+
+  chunks.forEach((chunk, i) => {
+    if (!chunk.length) return;
+
+    let content = '<ul class="spo">\n';
+
+    chunk.forEach(line => {
+      const slug = slugify(line);
+      const url = domain + "/?q=" + slug;
+
+      content += '<li><a href="' + url + '">' + escapeHTML(line) + '</a></li>\n';
+    });
+
+    content += '</ul>';
+
+    zip.file(`part-${i+1}.html`, content);
+
+    if (i < 2) preview += content + "\n\n";
   });
 
-  result += '</ul>';
+  document.getElementById("output").textContent = preview;
 
-  document.getElementById("output").textContent = result;
+  const blob = await zip.generateAsync({ type: "blob" });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "hasil-ul.zip";
+  link.click();
 }
 
-function copyResult() {
-  const text = document.getElementById("output").textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    alert("Hasil berhasil di-copy!");
-  });
-}
 </script>
 
 </main>
-
 </body>
 </html>
