@@ -8,8 +8,16 @@
 <style>
 textarea { width:100%; height:200px; margin-bottom:10px; }
 button { padding:8px 15px; margin-right:5px; cursor:pointer; }
-.nnn { padding:8px; max-width:100%; background-color:#ddd;}
+.nnn { padding:10px; max-width:100%; background-color:#ddd;}
 pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
+.info {
+  background:#fff;
+  padding:10px;
+  margin-bottom:10px;
+  border-left:4px solid #333;
+  font-size:14px;
+  line-height:1.5;
+}
 </style>
 
 </head>
@@ -17,10 +25,35 @@ pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
 
 <main>
 
-<h4>Convert List ke UL LI</h4>
-<p>Setiap baris akan dijadikan &lt;li&gt;</p>
+<h3>Tool Convert List ke UL LI</h3>
+
+<!-- ===== KETERANGAN UTAMA DI TAMPILAN ===== -->
+<div class="info">
+<b>Fungsi:</b><br>
+Mengubah daftar baris menjadi HTML list <code>&lt;ul class="spo"&gt;</code> dengan isi <code>&lt;li&gt;</code>.<br><br>
+
+<b>Cara pakai:</b>
+<ol>
+<li>Paste daftar (1 baris = 1 item)</li>
+<li>Klik tombol <b>Generate</b></li>
+<li>Klik <b>Copy Hasil</b> untuk menyalin</li>
+</ol>
+
+<b>Contoh input:</b><br>
+apel<br>
+jeruk<br>
+mangga<br><br>
+
+<b>Contoh output:</b>
+<pre>&lt;ul class="spo"&gt;
+&lt;li&gt;apel&lt;/li&gt;
+&lt;li&gt;jeruk&lt;/li&gt;
+&lt;li&gt;mangga&lt;/li&gt;
+&lt;/ul&gt;</pre>
+</div>
 
 <div class="nnn">
+
 <textarea id="input" placeholder="Paste baris di sini..."></textarea>
 
 <br><center>
@@ -30,6 +63,7 @@ pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
 
 <h3>Hasil:</h3>
 <pre id="output"></pre>
+
 </div>
 
 <script>
