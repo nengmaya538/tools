@@ -34,6 +34,7 @@ input, select { padding:6px; margin:5px 0; width:100%; }
 <div class="info">
 <b>Fungsi:</b><br />
 Convert list jadi banyak file HTML berisi link SEO lalu di-zip.<br /><br />
+
 <b>Format link:</b><br />
 <code>domain.com/?q=slug</code><br /><br />
 
@@ -50,21 +51,22 @@ Convert list jadi banyak file HTML berisi link SEO lalu di-zip.<br /><br />
 <ul>
 <li>hapus spasi depan belakang ✔</li>
 <li>rapikan spasi tengah ✔</li>
-<li>hapus karakter aneh ✔</li>
+<li>abaikan baris kosong ✔</li>
+<li>abaikan simbol saja ✔</li>
 </ul>
-</div><br />
+</div>
+
 <br><b>Contoh output:</b>
 <pre>&lt;ul class="spo"&gt;
-&lt;li&gt;kw01&lt;/li&gt;
-&lt;li&gt;kw02&lt;/li&gt;
-&lt;li&gt;kw03&lt;/li&gt;
+&lt;li&gt;&lt;a href="domain.com/?q=contoh-kata"&gt;contoh kata&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;</pre>
-<br>akan terisi otomatis a href ditambah ?q=<br>
-<b><i>TINGGAL MASUKIN DAFTAR KW</i></b>
+
+<br><b><i>TINGGAL MASUKIN DAFTAR KW</i></b>
 <br><br>
+
 <div class="nnn">
 
-<input type="text" id="domain" placeholder="contoh: /categories/">
+<input type="text" id="domain" placeholder="contoh: domain.com atau /categories">
 
 <textarea id="input" placeholder="Paste banyak baris..."></textarea>
 
@@ -95,8 +97,8 @@ function escapeHTML(str) {
 // Bersihkan teks
 function cleanText(text) {
   return text
-    .trim() // hapus spasi depan belakang
-    .replace(/\s+/g, " "); // rapikan spasi tengah
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 // Slug SEO
@@ -117,10 +119,11 @@ async function generate() {
   if (!domain) return alert("Isi domain!");
   if (!num || num <= 0) return alert("Isi jumlah!");
 
+  // 🔥 FILTER SUPER BERSIH
   const lines = raw
     .split("\n")
     .map(cleanText)
-    .filter(l => l !== "");
+    .filter(l => l !== "" && /[a-z0-9]/i.test(l));
 
   let chunks = [];
 
