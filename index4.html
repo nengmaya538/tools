@@ -26,47 +26,31 @@ input, select { padding:6px; margin:5px 0; width:100%; }
 </head>
 
 <body>
-<div loading="lazy">
+
 <main>
 
-<h2>UL LI class spo</h2>
+<h2>UL LI class spo (PRO MAX)</h2>
 
 <div class="info">
-<b>Fungsi:</b><br />
-Convert list jadi banyak file HTML berisi link SEO lalu di-zip.<br /><br />
+<b>Fungsi:</b><br>
+Convert list jadi banyak file HTML + link SEO + ZIP.<br><br>
 
-<b>Format link:</b><br />
-<code>domain.com/?q=slug</code><br /><br />
-
-<b>Mode:</b>
-<ul>
-<li><b>Bagi bagian</b> → jumlah file</li>
-<li><b>Item per bagian</b> → isi tiap file</li>
-</ul>
-
-<b>Contoh:</b><br />
-10.000 baris + 1000 item → 10 file dalam ZIP<br /><br />
+<b>Format URL:</b><br>
+<code>/categories/?q=baris 01</code> (default jika domain kosong)<br><br>
 
 <b>Auto Clean:</b>
 <ul>
 <li>hapus spasi depan belakang ✔</li>
 <li>rapikan spasi tengah ✔</li>
+<li>_ dan - jadi spasi ✔</li>
+<li>hapus simbol depan/belakang ✔</li>
 <li>abaikan baris kosong ✔</li>
-<li>abaikan simbol saja ✔</li>
 </ul>
 </div>
 
-<br><b>Contoh output:</b>
-<pre>&lt;ul class="spo"&gt;
-&lt;li&gt;&lt;a href="domain.com/?q=contoh-kata"&gt;contoh kata&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;</pre>
-
-<br><b><i>TINGGAL MASUKIN DAFTAR KW</i></b>
-<br><br>
-
 <div class="nnn">
 
-<input type="text" id="domain" placeholder="contoh: domain.com atau /categories">
+<input type="text" id="domain" placeholder="kosongkan = default /categories">
 
 <textarea id="input" placeholder="Paste banyak baris..."></textarea>
 
@@ -77,10 +61,10 @@ Convert list jadi banyak file HTML berisi link SEO lalu di-zip.<br /><br />
 
 <input type="number" id="number" placeholder="contoh: 10 atau 1000">
 
-<br /><br />
+<br><br>
 <button onclick="generate()">🚀 Generate + Download ZIP</button>
 
-<h3>Preview (sebagian):</h3>
+<h3>Preview:</h3>
 <pre id="output"></pre>
 
 </div>
@@ -96,17 +80,18 @@ function escapeHTML(str) {
 
 // Bersihkan teks
 function cleanText(text) {
-  return text
-    .trim()
-    .replace(/\s+/g, " ");
+  return text.trim().replace(/\s+/g, " ");
 }
 
-// Slug SEO
-function slugify(text) {
+// Normalisasi query
+function normalizeQuery(text) {
   return text
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9\-]/g, "");
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[^a-z0-9]+/i, "")
+    .replace(/[^a-z0-9]+$/i, "");
 }
 
 async function generate() {
@@ -114,12 +99,14 @@ async function generate() {
   const raw = document.getElementById("input").value;
   const mode = document.getElementById("mode").value;
   const num = parseInt(document.getElementById("number").value);
-  const domain = document.getElementById("domain").value.trim();
 
-  if (!domain) return alert("Isi domain!");
+  let domain = document.getElementById("domain").value.trim();
+
+  // 🔥 DEFAULT DOMAIN
+  if (!domain) domain = "/categories";
+
   if (!num || num <= 0) return alert("Isi jumlah!");
 
-  // 🔥 FILTER SUPER BERSIH
   const lines = raw
     .split("\n")
     .map(cleanText)
@@ -154,8 +141,8 @@ async function generate() {
     let content = '<ul class="spo">\n';
 
     chunk.forEach(line => {
-      const slug = slugify(line);
-      const url = domain + "/?q=" + slug;
+      const query = normalizeQuery(line);
+      const url = domain + "/?q=" + query;
 
       content += '<li><a href="' + url + '">' + escapeHTML(line) + '</a></li>\n';
     });
@@ -180,6 +167,5 @@ async function generate() {
 </script>
 
 </main>
-</div>
 </body>
 </html>
