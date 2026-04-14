@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UL LI Generator PRO FINAL</title>
+<title>UL LI Generator PRO MULTI DOMAIN</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -19,7 +19,6 @@ pre { background:#f4f4f4; padding:15px; white-space:pre-wrap; }
   margin-bottom:10px;
   border-left:4px solid #333;
   font-size:14px;
-  line-height:1.6;
 }
 input, select { padding:6px; margin:5px 0; width:100%; }
 </style>
@@ -29,46 +28,21 @@ input, select { padding:6px; margin:5px 0; width:100%; }
 
 <main>
 
-<h2>UL LI Generator PRO (FINAL)</h2>
+<h2>UL LI Generator PRO (MULTI DOMAIN)</h2>
 
 <div class="info">
-
-<b>Fungsi:</b><br>
-Mengubah daftar keyword menjadi banyak file HTML berisi link, lalu otomatis di-zip.<br><br>
-
-<b>Format URL:</b><br>
-<code>/categories/?q=baris 01</code><br>
-(Default jika domain kosong)<br><br>
-
-<b>Aturan pembersihan data:</b>
-<ul>
-<li>Spasi depan & belakang dihapus</li>
-<li>Spasi berlebih dirapikan</li>
-<li>Tanda <b>_</b> dan <b>-</b> diubah jadi spasi</li>
-<li>Simbol di awal/akhir dihapus</li>
-</ul>
-
-<b>Filter baris:</b>
-<ul>
-<li>Baris kosong → dibuang</li>
-<li>Hanya simbol → dibuang</li>
-<li>Kurang dari <b>5 huruf/angka</b> → dibuang</li>
-</ul>
-
-<b>Mode split:</b>
-<ul>
-<li><b>Bagi jumlah bagian</b> → menentukan jumlah file</li>
-<li><b>Item per bagian</b> → menentukan isi tiap file</li>
-</ul>
-
-<b>Contoh:</b><br>
-10.000 baris + 1000 item → hasil 10 file dalam ZIP
-
+✔ Support banyak domain (1 baris = 1 domain)<br>
+✔ Domain akan diputar otomatis<br>
+✔ Semua bahasa tetap aman<br>
+✔ Filter min 5 karakter aktif
 </div>
 
 <div class="nnn">
 
-<input type="text" id="domain" placeholder="kosongkan = /categories">
+<textarea id="domain" placeholder="Contoh:
+https://site1.com
+https://site2.com
+/categories"></textarea>
 
 <textarea id="input" placeholder="Paste banyak baris di sini..."></textarea>
 
@@ -89,27 +63,28 @@ Mengubah daftar keyword menjadi banyak file HTML berisi link, lalu otomatis di-z
 
 <script>
 
-// Escape HTML
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "\"":"&quot;",
+    "'":"&#39;"
   }[m]));
 }
 
-// Bersihkan teks tampilan
-function cleanText(text) {
-  return text.trim().replace(/\s+/g, " ");
+function removeControlChars(str) {
+  return str.replace(/[\u0000-\u001F\u007F]/g, "");
 }
 
-// Normalisasi untuk URL (?q=...)
-function normalizeQuery(text) {
-  return text
-    .toLowerCase()
-    .replace(/[_-]+/g, " ")
+function cleanText(text) {
+  return removeControlChars(text)
     .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^[^a-z0-9]+/i, "")
-    .replace(/[^a-z0-9]+$/i, "");
+    .trim();
+}
+
+function normalizeQuery(text) {
+  return text.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
 async function generate() {
@@ -118,20 +93,23 @@ async function generate() {
   const mode = document.getElementById("mode").value;
   const num = parseInt(document.getElementById("number").value);
 
-  let domain = document.getElementById("domain").value.trim();
+  // ✅ MULTI DOMAIN
+  let domains = document.getElementById("domain").value
+    .split("\n")
+    .map(d => d.trim())
+    .filter(d => d !== "");
 
-  // Default domain
-  if (!domain) domain = "/categories";
+  if (domains.length === 0) domains = ["/categories"];
 
   if (!num || num <= 0) return alert("Isi jumlah!");
 
-  // FILTER FINAL (MIN 5 KARAKTER)
+  // ✅ FILTER MIN 5 KARAKTER (SEMUA BAHASA)
   const lines = raw
     .split("\n")
     .map(cleanText)
     .filter(l => {
-      const clean = l.replace(/[^a-z0-9]/gi, "");
-      return l !== "" && clean.length >= 5;
+      const count = l.replace(/[^\p{L}\p{N}]/gu, "").length;
+      return l !== "" && count >= 5;
     });
 
   let chunks = [];
@@ -156,6 +134,7 @@ async function generate() {
 
   const zip = new JSZip();
   let preview = "";
+  let globalIndex = 0;
 
   chunks.forEach((chunk, i) => {
     if (!chunk.length) return;
@@ -164,9 +143,15 @@ async function generate() {
 
     chunk.forEach(line => {
       const query = normalizeQuery(line);
-      const url = domain + "/?q=" + query;
+
+      // 🔥 ROTASI DOMAIN
+      const domain = domains[globalIndex % domains.length];
+
+      const url = domain + "/?q=" + encodeURIComponent(query);
 
       content += '<li><a href="' + url + '">' + escapeHTML(line) + '</a></li>\n';
+
+      globalIndex++;
     });
 
     content += '</ul>';
@@ -182,7 +167,7 @@ async function generate() {
 
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "hasil-ul.zip";
+  link.download = "hasil-ul-multidomain.zip";
   link.click();
 }
 
