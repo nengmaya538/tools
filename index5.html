@@ -1,0 +1,271 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FULL PRO CLEANER</title>  <!-- XLSX Reader -->  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 240px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      resize: vertical;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 6px 6px 6px 0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .stats {
+      margin: 15px 0;
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      line-height: 1.8;
+    }
+
+    .hint {
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+  </style></head>
+<body>
+  <div class="box">
+    <h1>bersihin KW mentah</h1><div class="hint">
+  <strong>Fitur:</strong><br>
+  • Membersihkan tag HTML berbahaya<br>
+  • Menghapus symbol / icon / emoji<br>
+  • Tetap mempertahankan semua huruf Unicode (Latin, Korea, Jepang, China, Arab, Rusia, India, dll)<br>
+  • Tidak menghapus URL<br>
+  • Tidak menghapus Email<br>
+  • Menghapus baris yang hanya berisi angka<br>
+  • Menghapus baris kurang dari 5 karakter<br>
+  • Menghapus duplikat otomatis<br>
+  • Upload file: TXT / HTML / CSV / XLSX (multi-sheet support) / ZIP<br>
+  • Download hasil: TXT / HTML / CSV / XLSX / ZIP + Report
+</div>
+
+<input type="file" id="fileInput" accept=".txt,.html,.htm,.xlsx,.zip" />
+
+<h3>Input</h3>
+<textarea id="inputText" placeholder="Tempel data atau upload file..."></textarea>
+
+<div>
+  <button onclick="prosesText()">Bersihkan</button>
+  <button onclick="copyHasil()">Copy Hasil</button>
+  <button onclick="downloadTXT()">Download TXT</button>
+  <button onclick="downloadHTML()">Download HTML</button>
+  <button onclick="downloadXLSX()">Download XLSX</button>
+  <button onclick="downloadZIP()">Download ZIP</button>
+</div>
+
+<div class="stats" id="stats">
+  Input: 0 baris<br>
+  Output: 0 baris
+</div>
+
+<h3>Hasil</h3>
+<textarea id="outputText" readonly></textarea>
+
+  </div>  <script>
+    document.getElementById("fileInput").addEventListener("change", handleFileUpload);
+
+    function bersihkanHTML(teks) {
+      return teks
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+
+        // Hapus emoji dan symbol berat, tetap pertahankan huruf/angka semua bahasa
+        .replace(/[^(\p{L}\p{N}\p{M}\s@.:/\\+\-_&#;)]/gu, "")
+
+        // Rapikan spasi
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function prosesText() {
+      const input = document.getElementById("inputText").value;
+      const inputLines = input.split(/\r?\n/);
+
+      let hasil = inputLines
+        .map(item => bersihkanHTML(item))
+        .filter(item => item !== "")
+        .filter(item => item.length >= 5)
+        // Hapus baris yang hanya berisi angka
+        .filter(item => !/^\d+$/.test(item));
+
+      // Hapus duplikat
+      hasil = [...new Set(hasil)];
+
+      document.getElementById("outputText").value = hasil.join("\n");
+      const removed = inputLines.length - hasil.length;
+      document.getElementById("stats").innerHTML =
+        `Input: ${inputLines.length} baris<br>Removed: ${removed} baris<br>Output: ${hasil.length} baris<br>Progress: 100% selesai`;
+    }
+
+    function copyHasil() {
+      const text = document.getElementById("outputText").value;
+      if (!text.trim()) {
+        alert("Belum ada hasil.");
+        return;
+      }
+
+      navigator.clipboard.writeText(text)
+        .then(() => alert("Hasil berhasil disalin."));
+    }
+
+    function downloadFile(content, filename, type) {
+      if (!content.trim()) {
+        alert("Silakan proses data terlebih dahulu.");
+        return;
+      }
+
+      const blob = new Blob([content], { type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadTXT() {
+      downloadFile(
+        document.getElementById("outputText").value,
+        "hasil_bersih.txt",
+        "text/plain;charset=utf-8"
+      );
+    }
+
+    function downloadHTML() {
+      const content = document.getElementById("outputText").value
+        .split("\n")
+        .map(line => `<p>${line}</p>`)
+        .join("\n");
+
+      downloadFile(content, "hasil_bersih.html", "text/html;charset=utf-8");
+    }
+
+    function downloadXLSX() {
+      const output = document.getElementById("outputText").value;
+      if (!output.trim()) {
+        alert("Silakan proses data terlebih dahulu.");
+        return;
+      }
+
+      const rows = output.split("\n").map(item => ({ Data: item }));
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil");
+      XLSX.writeFile(workbook, "hasil_bersih.xlsx");
+    }
+
+    function downloadZIP() {
+      const output = document.getElementById("outputText").value;
+      if (!output.trim()) {
+        alert("Silakan proses data terlebih dahulu.");
+        return;
+      }
+
+      const zip = new JSZip();
+      zip.file("hasil_bersih.txt", output);
+      zip.file("report.txt", document.getElementById("stats").innerText);
+
+      zip.generateAsync({ type: "blob" }).then(function(content) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(content);
+        link.download = "hasil_bersih.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (["txt", "html", "htm"].includes(ext)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById("inputText").value = e.target.result;
+        };
+        reader.readAsText(file, "UTF-8");
+      }
+
+      if (ext === "zip") {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const zip = await JSZip.loadAsync(e.target.result);
+          let combined = [];
+
+          for (const filename of Object.keys(zip.files)) {
+            const fileObj = zip.files[filename];
+            if (!fileObj.dir) {
+              const content = await fileObj.async("string");
+              combined.push(content);
+            }
+          }
+
+          document.getElementById("inputText").value = combined.join("
+");
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      if (ext === "xlsx") {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          let allLines = [];
+
+          workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            allLines = allLines.concat(json.flat().filter(Boolean));
+          });
+
+          const lines = allLines.join("
+");
+          document.getElementById("inputText").value = lines;
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    }
+  </script></body>
+</html>
