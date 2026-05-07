@@ -20,7 +20,7 @@
       background: white;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     }
 
     textarea {
@@ -74,7 +74,7 @@
   • Download hasil: TXT / HTML / CSV / XLSX / ZIP + Report
 </div>
 
-<input type="file" id="fileInput" accept=".txt,.html,.htm,.xlsx,.zip" />
+<input type="file" id="fileInput" accept=".txt,.html,.htm,.csv,.xlsx,.zip" />
 
 <h3>Input</h3>
 <textarea id="inputText" placeholder="Tempel data atau upload file..."></textarea>
@@ -106,11 +106,8 @@
         .replace(/>/g, "&gt;")
         .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#39;")
-
         // Hapus emoji dan symbol berat, tetap pertahankan huruf/angka semua bahasa
-        .replace(/[^(\p{L}\p{N}\p{M}\s@.:/\\+\-_&#;)]/gu, "")
-
-        // Rapikan spasi
+        .replace(/[^\p{L}\p{N}\p{M}\s@.:/\\+\-_&#;]/gu, "")
         .replace(/\s+/g, " ")
         .trim();
     }
@@ -123,13 +120,12 @@
         .map(item => bersihkanHTML(item))
         .filter(item => item !== "")
         .filter(item => item.length >= 5)
-        // Hapus baris yang hanya berisi angka
         .filter(item => !/^\d+$/.test(item));
 
-      // Hapus duplikat
       hasil = [...new Set(hasil)];
 
       document.getElementById("outputText").value = hasil.join("\n");
+
       const removed = inputLines.length - hasil.length;
       document.getElementById("stats").innerHTML =
         `Input: ${inputLines.length} baris<br>Removed: ${removed} baris<br>Output: ${hasil.length} baris<br>Progress: 100% selesai`;
@@ -137,6 +133,7 @@
 
     function copyHasil() {
       const text = document.getElementById("outputText").value;
+
       if (!text.trim()) {
         alert("Belum ada hasil.");
         return;
@@ -180,6 +177,7 @@
 
     function downloadXLSX() {
       const output = document.getElementById("outputText").value;
+
       if (!output.trim()) {
         alert("Silakan proses data terlebih dahulu.");
         return;
@@ -188,12 +186,14 @@
       const rows = output.split("\n").map(item => ({ Data: item }));
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
+
       XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil");
       XLSX.writeFile(workbook, "hasil_bersih.xlsx");
     }
 
     function downloadZIP() {
       const output = document.getElementById("outputText").value;
+
       if (!output.trim()) {
         alert("Silakan proses data terlebih dahulu.");
         return;
@@ -219,14 +219,17 @@
 
       const ext = file.name.split('.').pop().toLowerCase();
 
-      if (["txt", "html", "htm"].includes(ext)) {
+      // TXT / HTML / HTM / CSV
+      if (["txt", "html", "htm", "csv"].includes(ext)) {
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById("inputText").value = e.target.result;
         };
         reader.readAsText(file, "UTF-8");
+        return;
       }
 
+      // ZIP
       if (ext === "zip") {
         const reader = new FileReader();
         reader.onload = async function(e) {
@@ -236,17 +239,22 @@
           for (const filename of Object.keys(zip.files)) {
             const fileObj = zip.files[filename];
             if (!fileObj.dir) {
-              const content = await fileObj.async("string");
-              combined.push(content);
+              try {
+                const content = await fileObj.async("string");
+                combined.push(content);
+              } catch (err) {
+                console.error("Gagal membaca file ZIP:", filename, err);
+              }
             }
           }
 
-          document.getElementById("inputText").value = combined.join("
-");
+          document.getElementById("inputText").value = combined.join("\n");
         };
         reader.readAsArrayBuffer(file);
+        return;
       }
 
+      // XLSX
       if (ext === "xlsx") {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -257,15 +265,23 @@
           workbook.SheetNames.forEach(sheetName => {
             const sheet = workbook.Sheets[sheetName];
             const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-            allLines = allLines.concat(json.flat().filter(Boolean));
+
+            json.forEach(row => {
+              row.forEach(cell => {
+                if (cell !== undefined && cell !== null && String(cell).trim() !== "") {
+                  allLines.push(String(cell));
+                }
+              });
+            });
           });
 
-          const lines = allLines.join("
-");
-          document.getElementById("inputText").value = lines;
+          document.getElementById("inputText").value = allLines.join("\n");
         };
         reader.readAsArrayBuffer(file);
+        return;
       }
+
+      alert("Format file tidak didukung.");
     }
   </script></body>
 </html>
